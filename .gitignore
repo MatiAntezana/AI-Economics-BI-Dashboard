@@ -1,0 +1,9 @@
+.DS_Store
+.~*.twbr
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Older intermediate workbook kept locally for reference.
+data/*.twb
