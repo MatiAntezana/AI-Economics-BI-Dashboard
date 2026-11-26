@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DSExport>
+  <Header CharacterSet="UTF-8" ExportingTool="IBM InfoSphere DataStage Export" ToolVersion="8" ServerName="DS_AI_ECONOMICS" ToolInstanceID="ai_economics" Date="2026-07-31" Time="08.00.00" ServerVersion="11.7"/>
+  <Job Identifier="jb_ai_economics_etl" DateModified="2026-07-31" TimeModified="08.00.00">
+    <Record Identifier="ROOT" Type="JobDefn" Readonly="0">
+      <Property Name="Name">jb_ai_economics_etl</Property>
+      <Property Name="Description">Parallel Job ETL de AI Economics: ingesta de telemetria cruda, control de calidad, lookup de tarifas/presupuestos, calculo de costos y ROI, agregacion diaria (16.200 registros) y carga en BigQuery.</Property>
+      <Property Name="NextID">10</Property>
+      <Property Name="Container">V0</Property>
+      <Property Name="JobVersion">56.0.0</Property>
+      <Property Name="ControlAfterSubr">0</Property>
+      <Property Name="JobType">3</Property>
+      <Property Name="Category">\Jobs\AI_Economics</Property>
+      <Property Name="RuntimeColumnPropagation">0</Property>
+      <Property Name="NLSMapName">UTF-8</Property>
+      <Collection Name="Parameters" Type="Parameters">
+        <SubRecord>
+          <Property Name="Name">pInputTelemetryPath</Property>
+          <Property Name="Prompt">Ruta logs crudos de telemetria</Property>
+          <Property Name="Default">landing/telemetry_events_raw.csv</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">pRefModelRatesPath</Property>
+          <Property Name="Prompt">Ruta maestro tarifas de modelos</Property>
+          <Property Name="Default">ref/model_rates.csv</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">pRefTeamBudgetsPath</Property>
+          <Property Name="Prompt">Ruta maestro presupuestos por equipo</Property>
+          <Property Name="Default">ref/team_budgets.csv</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">pRejectFilePath</Property>
+          <Property Name="Prompt">Ruta archivo de rechazos</Property>
+          <Property Name="Default">rejects/ai_telemetry_rejects.csv</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">pBqProjectId</Property>
+          <Property Name="Prompt">BigQuery Project ID</Property>
+          <Property Name="Default">YOUR_PROJECT_ID</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">pBqDataset</Property>
+          <Property Name="Prompt">BigQuery Dataset</Property>
+          <Property Name="Default">ai_economics</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">pBqTable</Property>
+          <Property Name="Prompt">BigQuery Target Table</Property>
+          <Property Name="Default">ai_usage_daily</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">pOutputCsvPath</Property>
+          <Property Name="Prompt">Ruta snapshot CSV consolidado</Property>
+          <Property Name="Default">data/ai_usage_daily.csv</Property>
+          <Property Name="ParamType">0</Property>
+        </SubRecord>
+      </Collection>
+    </Record>
+
+    <Record Identifier="V0" Type="ContainerView" Readonly="0">
+      <Property Name="Name">Job</Property>
+      <Property Name="NextID">10</Property>
+      <Property Name="IsTopLevel">0</Property>
+      <Property Name="StageList">V0S1|V0S2|V0S3|V0S4|V0S5|V0S6|V0S7|V0S8|V0S9</Property>
+      <Property Name="StageXPos">80|320|320|220|440|660|880|1100|220</Property>
+      <Property Name="StageYPos">240|80|400|240|240|240|240|240|420</Property>
+      <Property Name="StageTypes">CCustomStage|CCustomStage|CCustomStage|CCustomStage|CCustomStage|CTransformerStage|CCustomStage|CCustomStage|CCustomStage</Property>
+      <Property Name="SnapToGrid">1</Property>
+      <Property Name="GridLines">0</Property>
+      <Property Name="ZoomValue">100</Property>
+    </Record>
+
+    <!-- Stage 1: Sequential File - Raw Telemetry -->
+    <Record Identifier="V0S1" Type="CustomStage" Readonly="0">
+      <Property Name="Name">seq_telemetry_raw</Property>
+      <Property Name="StageType">PxSequentialFile</Property>
+      <Property Name="NextID">2</Property>
+      <Property Name="OutputPins">V0S1P1</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord>
+          <Property Name="Name">file</Property>
+          <Property Name="Value">#pInputTelemetryPath#</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">firstLineColumnNames</Property>
+          <Property Name="Value">firstLineColumnNames</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">delimiter</Property>
+          <Property Name="Value">,</Property>
+        </SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S1P1" Type="CustomOutput" Readonly="0">
+      <Property Name="Name">lnk_raw_telemetry</Property>
+      <Property Name="Partner">V0S4|V0S4P1</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">event_timestamp</Property><Property Name="SqlType">12</Property><Property Name="Precision">26</Property><Property Name="Scale">0</Property><Property Name="Nullable">1</Property></SubRecord>
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">1</Property></SubRecord>
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">1</Property></SubRecord>
+        <SubRecord><Property Name="Name">environment</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">1</Property></SubRecord>
+        <SubRecord><Property Name="Name">region</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">requests</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">avg_latency_ms</Property><Property Name="SqlType">4</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">p95_latency_ms</Property><Property Name="SqlType">4</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">error_count</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">cache_hit_count</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+      </Collection>
+    </Record>
+
+    <!-- Stage 2: Sequential File - Model Rates Reference -->
+    <Record Identifier="V0S2" Type="CustomStage" Readonly="0">
+      <Property Name="Name">seq_ref_model_rates</Property>
+      <Property Name="StageType">PxSequentialFile</Property>
+      <Property Name="NextID">2</Property>
+      <Property Name="OutputPins">V0S2P1</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord>
+          <Property Name="Name">file</Property>
+          <Property Name="Value">#pRefModelRatesPath#</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">firstLineColumnNames</Property>
+          <Property Name="Value">firstLineColumnNames</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">delimiter</Property>
+          <Property Name="Value">,</Property>
+        </SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S2P1" Type="CustomOutput" Readonly="0">
+      <Property Name="Name">lnk_ref_models</Property>
+      <Property Name="Partner">V0S5|V0S5P2</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">1</Property></SubRecord>
+        <SubRecord><Property Name="Name">provider</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_rate_usd_per_m</Property><Property Name="SqlType">3</Property><Property Name="Precision">10</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_rate_usd_per_m</Property><Property Name="SqlType">3</Property><Property Name="Precision">10</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">traffic_share</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">value_multiplier</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property></SubRecord>
+      </Collection>
+    </Record>
+
+    <!-- Stage 3: Sequential File - Team Budgets Reference -->
+    <Record Identifier="V0S3" Type="CustomStage" Readonly="0">
+      <Property Name="Name">seq_ref_team_budgets</Property>
+      <Property Name="StageType">PxSequentialFile</Property>
+      <Property Name="NextID">2</Property>
+      <Property Name="OutputPins">V0S3P1</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord>
+          <Property Name="Name">file</Property>
+          <Property Name="Value">#pRefTeamBudgetsPath#</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">firstLineColumnNames</Property>
+          <Property Name="Value">firstLineColumnNames</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">delimiter</Property>
+          <Property Name="Value">,</Property>
+        </SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S3P1" Type="CustomOutput" Readonly="0">
+      <Property Name="Name">lnk_ref_teams</Property>
+      <Property Name="Partner">V0S5|V0S5P3</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">1</Property></SubRecord>
+        <SubRecord><Property Name="Name">product</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">daily_budget_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">12</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property></SubRecord>
+      </Collection>
+    </Record>
+
+    <!-- Stage 4: Filter - Quality Gate -->
+    <Record Identifier="V0S4" Type="CustomStage" Readonly="0">
+      <Property Name="Name">flt_quality_gate</Property>
+      <Property Name="StageType">PxFilter</Property>
+      <Property Name="NextID">4</Property>
+      <Property Name="InputPins">V0S4P1</Property>
+      <Property Name="OutputPins">V0S4P2|V0S4P3</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord>
+          <Property Name="Name">where</Property>
+          <Property Name="Value">event_timestamp IS NOT NULL AND team &lt;&gt; '' AND model &lt;&gt; '' AND (environment = 'production' OR environment = 'staging' OR environment = 'development') AND requests &gt; 0 AND input_tokens &gt;= 0 AND output_tokens &gt;= 0 AND avg_latency_ms &gt;= 0 AND p95_latency_ms &gt;= avg_latency_ms AND error_count &gt;= 0 AND error_count &lt;= requests AND cache_hit_count &gt;= 0 AND cache_hit_count &lt;= requests</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">rejects</Property>
+          <Property Name="Value">true</Property>
+        </SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S4P1" Type="CustomInput" Readonly="0">
+      <Property Name="Name">lnk_raw_telemetry</Property>
+      <Property Name="Partner">V0S1|V0S1P1</Property>
+      <Property Name="LinkType">1</Property>
+    </Record>
+    <Record Identifier="V0S4P2" Type="CustomOutput" Readonly="0">
+      <Property Name="Name">lnk_valid_telemetry</Property>
+      <Property Name="Partner">V0S5|V0S5P1</Property>
+      <Property Name="OutputMode">0</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">event_timestamp</Property><Property Name="SqlType">12</Property><Property Name="Precision">26</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">environment</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">region</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">requests</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">avg_latency_ms</Property><Property Name="SqlType">4</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">p95_latency_ms</Property><Property Name="SqlType">4</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">error_count</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">cache_hit_count</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S4P3" Type="CustomOutput" Readonly="0">
+      <Property Name="Name">reject_link</Property>
+      <Property Name="Partner">V0S9|V0S9P1</Property>
+      <Property Name="OutputMode">1</Property>
+      <Property Name="Reject">1</Property>
+    </Record>
+
+    <!-- Stage 5: Lookup - Enrich Model Rates & Team Budgets (Entire Partitioning) -->
+    <Record Identifier="V0S5" Type="CustomStage" Readonly="0">
+      <Property Name="Name">lkp_rates_and_budgets</Property>
+      <Property Name="StageType">PxLookup</Property>
+      <Property Name="NextID">5</Property>
+      <Property Name="InputPins">V0S5P1|V0S5P2|V0S5P3</Property>
+      <Property Name="OutputPins">V0S5P4</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord>
+          <Property Name="Name">lookupFailure</Property>
+          <Property Name="Value">drop</Property>
+        </SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S5P1" Type="CustomInput" Readonly="0">
+      <Property Name="Name">lnk_valid_telemetry</Property>
+      <Property Name="Partner">V0S4|V0S4P2</Property>
+      <Property Name="LinkType">1</Property>
+      <Collection Name="MetaBag" Type="MetaProperty">
+        <SubRecord><Property Name="Owner">APT</Property><Property Name="Name">PartCol</Property><Property Name="Value">auto</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S5P2" Type="CustomInput" Readonly="0">
+      <Property Name="Name">lnk_ref_models</Property>
+      <Property Name="Partner">V0S2|V0S2P1</Property>
+      <Property Name="LinkType">2</Property>
+      <Collection Name="MetaBag" Type="MetaProperty">
+        <SubRecord><Property Name="Owner">APT</Property><Property Name="Name">PartCol</Property><Property Name="Value">entire</Property></SubRecord>
+      </Collection>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">model</Property><Property Name="KeyPosition">1</Property><Property Name="LookupKey">lnk_valid_telemetry.model</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S5P3" Type="CustomInput" Readonly="0">
+      <Property Name="Name">lnk_ref_teams</Property>
+      <Property Name="Partner">V0S3|V0S3P1</Property>
+      <Property Name="LinkType">2</Property>
+      <Collection Name="MetaBag" Type="MetaProperty">
+        <SubRecord><Property Name="Owner">APT</Property><Property Name="Name">PartCol</Property><Property Name="Value">entire</Property></SubRecord>
+      </Collection>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">team</Property><Property Name="KeyPosition">1</Property><Property Name="LookupKey">lnk_valid_telemetry.team</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S5P4" Type="CustomOutput" Readonly="0">
+      <Property Name="Name">lnk_enriched_telemetry</Property>
+      <Property Name="Partner">V0S6|V0S6P1</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">event_timestamp</Property><Property Name="SqlType">12</Property><Property Name="Precision">26</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">product</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">provider</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">environment</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">region</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">requests</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">avg_latency_ms</Property><Property Name="SqlType">4</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">p95_latency_ms</Property><Property Name="SqlType">4</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">error_count</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">cache_hit_count</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_rate_usd_per_m</Property><Property Name="SqlType">3</Property><Property Name="Precision">10</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_rate_usd_per_m</Property><Property Name="SqlType">3</Property><Property Name="Precision">10</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">traffic_share</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">value_multiplier</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">daily_budget_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">12</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property></SubRecord>
+      </Collection>
+    </Record>
+
+    <!-- Stage 6: Transformer - Stage Variables & Economic Calculations -->
+    <Record Identifier="V0S6" Type="TransformerStage" Readonly="0">
+      <Property Name="Name">xfm_economics_metrics</Property>
+      <Property Name="StageType">PxTransformer</Property>
+      <Property Name="NextID">3</Property>
+      <Property Name="InputPins">V0S6P1</Property>
+      <Property Name="OutputPins">V0S6P2</Property>
+      <Collection Name="StageVars" Type="StageVar">
+        <SubRecord>
+          <Property Name="Name">svEventDate</Property>
+          <Property Name="Expression">StringToDate(Left(lnk_enriched_telemetry.event_timestamp, 10), "%yyyy-%mm-%dd")</Property>
+          <Property Name="SqlType">9</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svEnvShare</Property>
+          <Property Name="Expression">If lnk_enriched_telemetry.environment = "production" Then 0.86 Else If lnk_enriched_telemetry.environment = "staging" Then 0.10 Else 0.04</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svRawErrorRate</Property>
+          <Property Name="Expression">AsDouble(lnk_enriched_telemetry.error_count) / AsDouble(lnk_enriched_telemetry.requests)</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svErrorRate</Property>
+          <Property Name="Expression">If svRawErrorRate &gt; 0.20 Then 0.20 Else If svRawErrorRate &lt; 0.0 Then 0.0 Else svRawErrorRate</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svSuccessRate</Property>
+          <Property Name="Expression">1.0 - svErrorRate</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svRawCacheHit</Property>
+          <Property Name="Expression">AsDouble(lnk_enriched_telemetry.cache_hit_count) / AsDouble(lnk_enriched_telemetry.requests)</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svCacheHitRate</Property>
+          <Property Name="Expression">If svRawCacheHit &gt; 0.70 Then 0.70 Else If svRawCacheHit &lt; 0.0 Then 0.0 Else svRawCacheHit</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svTokenCost</Property>
+          <Property Name="Expression">(AsDouble(lnk_enriched_telemetry.input_tokens) / 1000000.0) * lnk_enriched_telemetry.input_rate_usd_per_m + (AsDouble(lnk_enriched_telemetry.output_tokens) / 1000000.0) * lnk_enriched_telemetry.output_rate_usd_per_m</Property>
+          <Property Name="SqlType">3</Property>
+          <Property Name="Precision">18</Property>
+          <Property Name="Scale">6</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svInfraMultiplier</Property>
+          <Property Name="Expression">If lnk_enriched_telemetry.provider = "Self-hosted" Then 1.18 Else 1.0</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svCostUsd</Property>
+          <Property Name="Expression">svTokenCost * svInfraMultiplier * (1.0 - 0.35 * svCacheHitRate)</Property>
+          <Property Name="SqlType">3</Property>
+          <Property Name="Precision">18</Property>
+          <Property Name="Scale">4</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svValuePerSuccess</Property>
+          <Property Name="Expression">If lnk_enriched_telemetry.team = "Customer Experience" Then 0.028 Else 0.041</Property>
+          <Property Name="SqlType">8</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svBusinessValueUsd</Property>
+          <Property Name="Expression">AsDouble(lnk_enriched_telemetry.requests) * svSuccessRate * svValuePerSuccess * lnk_enriched_telemetry.value_multiplier</Property>
+          <Property Name="SqlType">3</Property>
+          <Property Name="Precision">18</Property>
+          <Property Name="Scale">4</Property>
+        </SubRecord>
+        <SubRecord>
+          <Property Name="Name">svAllocatedBudgetUsd</Property>
+          <Property Name="Expression">lnk_enriched_telemetry.daily_budget_usd * lnk_enriched_telemetry.traffic_share * svEnvShare</Property>
+          <Property Name="SqlType">3</Property>
+          <Property Name="Precision">18</Property>
+          <Property Name="Scale">4</Property>
+        </SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S6P1" Type="TrxInput" Readonly="0">
+      <Property Name="Name">lnk_enriched_telemetry</Property>
+      <Property Name="Partner">V0S5|V0S5P4</Property>
+      <Property Name="LinkType">1</Property>
+    </Record>
+    <Record Identifier="V0S6P2" Type="TrxOutput" Readonly="0">
+      <Property Name="Name">lnk_calculated_metrics</Property>
+      <Property Name="Partner">V0S7|V0S7P1</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">event_date</Property><Property Name="SqlType">9</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">svEventDate</Property></SubRecord>
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.team</Property></SubRecord>
+        <SubRecord><Property Name="Name">product</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.product</Property></SubRecord>
+        <SubRecord><Property Name="Name">provider</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.provider</Property></SubRecord>
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.model</Property></SubRecord>
+        <SubRecord><Property Name="Name">environment</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.environment</Property></SubRecord>
+        <SubRecord><Property Name="Name">region</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.region</Property></SubRecord>
+        <SubRecord><Property Name="Name">requests</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.requests</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.input_tokens</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.output_tokens</Property></SubRecord>
+        <SubRecord><Property Name="Name">avg_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.avg_latency_ms</Property></SubRecord>
+        <SubRecord><Property Name="Name">p95_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="Derivation">lnk_enriched_telemetry.p95_latency_ms</Property></SubRecord>
+        <SubRecord><Property Name="Name">error_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property><Property Name="Derivation">svErrorRate</Property></SubRecord>
+        <SubRecord><Property Name="Name">success_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property><Property Name="Derivation">svSuccessRate</Property></SubRecord>
+        <SubRecord><Property Name="Name">cache_hit_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property><Property Name="Derivation">svCacheHitRate</Property></SubRecord>
+        <SubRecord><Property Name="Name">cost_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">18</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property><Property Name="Derivation">svCostUsd</Property></SubRecord>
+        <SubRecord><Property Name="Name">allocated_budget_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">18</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property><Property Name="Derivation">svAllocatedBudgetUsd</Property></SubRecord>
+        <SubRecord><Property Name="Name">business_value_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">18</Property><Property Name="Scale">4</Property><Property Name="Nullable">0</Property><Property Name="Derivation">svBusinessValueUsd</Property></SubRecord>
+      </Collection>
+    </Record>
+
+    <!-- Stage 7: Aggregator - Daily Consolidation (Hash Partitioning -> 16,200 rows) -->
+    <Record Identifier="V0S7" Type="CustomStage" Readonly="0">
+      <Property Name="Name">agg_daily_usage</Property>
+      <Property Name="StageType">PxAggregator</Property>
+      <Property Name="NextID">3</Property>
+      <Property Name="InputPins">V0S7P1</Property>
+      <Property Name="OutputPins">V0S7P2</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord><Property Name="Name">method</Property><Property Name="Value">hash</Property></SubRecord>
+        <SubRecord><Property Name="Name">key</Property><Property Name="Value">event_date|team|product|provider|model|environment|region</Property></SubRecord>
+        <SubRecord><Property Name="Name">aggregations</Property><Property Name="Value">requests=Sum(requests);input_tokens=Sum(input_tokens);output_tokens=Sum(output_tokens);avg_latency_ms=Mean(avg_latency_ms);p95_latency_ms=Max(p95_latency_ms);error_rate=Mean(error_rate);success_rate=Mean(success_rate);cache_hit_rate=Mean(cache_hit_rate);cost_usd=Sum(cost_usd);allocated_budget_usd=Max(allocated_budget_usd);business_value_usd=Sum(business_value_usd)</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S7P1" Type="CustomInput" Readonly="0">
+      <Property Name="Name">lnk_calculated_metrics</Property>
+      <Property Name="Partner">V0S6|V0S6P2</Property>
+      <Property Name="LinkType">1</Property>
+      <Collection Name="MetaBag" Type="MetaProperty">
+        <SubRecord><Property Name="Owner">APT</Property><Property Name="Name">PartCol</Property><Property Name="Value">hash</Property></SubRecord>
+        <SubRecord><Property Name="Owner">APT</Property><Property Name="Name">HashKey</Property><Property Name="Value">event_date,team,model,environment</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S7P2" Type="CustomOutput" Readonly="0">
+      <Property Name="Name">lnk_daily_usage</Property>
+      <Property Name="Partner">V0S8|V0S8P1</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">event_date</Property><Property Name="SqlType">9</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">1</Property></SubRecord>
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">2</Property></SubRecord>
+        <SubRecord><Property Name="Name">product</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">3</Property></SubRecord>
+        <SubRecord><Property Name="Name">provider</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">4</Property></SubRecord>
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">5</Property></SubRecord>
+        <SubRecord><Property Name="Name">environment</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">6</Property></SubRecord>
+        <SubRecord><Property Name="Name">region</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="KeyPosition">7</Property></SubRecord>
+        <SubRecord><Property Name="Name">requests</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">avg_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">p95_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">error_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">success_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">cache_hit_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">cost_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">38</Property><Property Name="Scale">9</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">allocated_budget_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">38</Property><Property Name="Scale">9</Property><Property Name="Nullable">0</Property></SubRecord>
+        <SubRecord><Property Name="Name">business_value_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">38</Property><Property Name="Scale">9</Property><Property Name="Nullable">0</Property></SubRecord>
+      </Collection>
+    </Record>
+
+    <!-- Stage 8: BigQuery Connector - Target Table ai_economics.ai_usage_daily -->
+    <Record Identifier="V0S8" Type="CustomStage" Readonly="0">
+      <Property Name="Name">bq_ai_usage_daily</Property>
+      <Property Name="StageType">BigQueryConnectorPX</Property>
+      <Property Name="NextID">2</Property>
+      <Property Name="InputPins">V0S8P1</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord><Property Name="Name">projectId</Property><Property Name="Value">#pBqProjectId#</Property></SubRecord>
+        <SubRecord><Property Name="Name">datasetName</Property><Property Name="Value">#pBqDataset#</Property></SubRecord>
+        <SubRecord><Property Name="Name">tableName</Property><Property Name="Value">#pBqTable#</Property></SubRecord>
+        <SubRecord><Property Name="Name">writeMode</Property><Property Name="Value">replace</Property></SubRecord>
+        <SubRecord><Property Name="Name">partitionField</Property><Property Name="Value">event_date</Property></SubRecord>
+        <SubRecord><Property Name="Name">clusteringFields</Property><Property Name="Value">team,model,environment</Property></SubRecord>
+        <SubRecord><Property Name="Name">csvSnapshotPath</Property><Property Name="Value">#pOutputCsvPath#</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S8P1" Type="CustomInput" Readonly="0">
+      <Property Name="Name">lnk_daily_usage</Property>
+      <Property Name="Partner">V0S7|V0S7P2</Property>
+      <Property Name="LinkType">1</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">event_date</Property><Property Name="SqlType">9</Property><Property Name="Precision">10</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">DATE</Property></SubRecord>
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">STRING</Property></SubRecord>
+        <SubRecord><Property Name="Name">product</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">STRING</Property></SubRecord>
+        <SubRecord><Property Name="Name">provider</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">STRING</Property></SubRecord>
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Precision">64</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">STRING</Property></SubRecord>
+        <SubRecord><Property Name="Name">environment</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">STRING</Property></SubRecord>
+        <SubRecord><Property Name="Name">region</Property><Property Name="SqlType">12</Property><Property Name="Precision">32</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">STRING</Property></SubRecord>
+        <SubRecord><Property Name="Name">requests</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">INT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">INT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">INT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">avg_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">INT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">p95_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Precision">19</Property><Property Name="Scale">0</Property><Property Name="Nullable">0</Property><Property Name="NativeType">INT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">error_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property><Property Name="NativeType">FLOAT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">success_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property><Property Name="NativeType">FLOAT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">cache_hit_rate</Property><Property Name="SqlType">8</Property><Property Name="Precision">15</Property><Property Name="Scale">6</Property><Property Name="Nullable">0</Property><Property Name="NativeType">FLOAT64</Property></SubRecord>
+        <SubRecord><Property Name="Name">cost_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">38</Property><Property Name="Scale">9</Property><Property Name="Nullable">0</Property><Property Name="NativeType">NUMERIC</Property></SubRecord>
+        <SubRecord><Property Name="Name">allocated_budget_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">38</Property><Property Name="Scale">9</Property><Property Name="Nullable">0</Property><Property Name="NativeType">NUMERIC</Property></SubRecord>
+        <SubRecord><Property Name="Name">business_value_usd</Property><Property Name="SqlType">3</Property><Property Name="Precision">38</Property><Property Name="Scale">9</Property><Property Name="Nullable">0</Property><Property Name="NativeType">NUMERIC</Property></SubRecord>
+      </Collection>
+    </Record>
+
+    <!-- Stage 9: Sequential File - Rejected Telemetry Records -->
+    <Record Identifier="V0S9" Type="CustomStage" Readonly="0">
+      <Property Name="Name">seq_reject_events</Property>
+      <Property Name="StageType">PxSequentialFile</Property>
+      <Property Name="NextID">2</Property>
+      <Property Name="InputPins">V0S9P1</Property>
+      <Collection Name="Properties" Type="CustomProperty">
+        <SubRecord><Property Name="Name">file</Property><Property Name="Value">#pRejectFilePath#</Property></SubRecord>
+        <SubRecord><Property Name="Name">firstLineColumnNames</Property><Property Name="Value">firstLineColumnNames</Property></SubRecord>
+        <SubRecord><Property Name="Name">delimiter</Property><Property Name="Value">,</Property></SubRecord>
+        <SubRecord><Property Name="Name">appendMode</Property><Property Name="Value">overwrite</Property></SubRecord>
+      </Collection>
+    </Record>
+    <Record Identifier="V0S9P1" Type="CustomInput" Readonly="0">
+      <Property Name="Name">reject_link</Property>
+      <Property Name="Partner">V0S4|V0S4P3</Property>
+      <Property Name="LinkType">1</Property>
+    </Record>
+  </Job>
+</DSExport>

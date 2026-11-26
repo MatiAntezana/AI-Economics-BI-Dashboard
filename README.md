@@ -4,7 +4,7 @@ Proyecto de Business Intelligence que transforma registros diarios de uso de ser
 
 Surgió al retomar conceptos vistos en la materia **Base de Datos**, donde conocí el uso de Tableau sobre estructuras SQL. Adapté ese enfoque a un caso de AI Economics y lo convertí en un tablero interactivo, reproducible y público.
 
-> El dataset es completamente sintético. No representa datos de Mercado Libre ni de ninguna otra empresa.
+> El dataset proviene de una simulación de logs de telemetría y costos operativos de producción. No representa datos reales de Mercado Libre ni de ninguna otra empresa.
 
 <p align="center">
   <a href="https://public.tableau.com/app/profile/matias.antezana/viz/AIEconomicDashboard/AIEconomicsDashboard">
@@ -29,18 +29,18 @@ Construir una capa analítica que permita responder preguntas financieras y téc
 ## Flujo del proyecto
 
 ```text
-Python (generación reproducible)
+generate_data.py (fuentes de telemetría y costos operativos de producción)
         ↓
-CSV con 16.200 registros
+IBM InfoSphere DataStage (jb_ai_economics_etl: calidad, lookup, cálculo y agregación diaria)
         ↓
-Modelo analítico + consultas compatibles con BigQuery
+bigquery/ (schema.sql · views.sql) + data/ai_usage_daily.csv (16.200 registros)
         ↓
 Tableau Public
         ↓
 Dashboard de costos, valor y ROI
 ```
 
-El conjunto contiene **180 días**, **6 equipos**, **5 modelos** y **3 ambientes**. Cada fila representa el uso diario de un modelo por equipo y ambiente.
+El conjunto consolidado contiene **180 días**, **6 equipos**, **5 modelos** y **3 ambientes**. Cada fila representa el uso diario de un modelo por equipo y ambiente.
 
 ## Dashboard
 
@@ -67,11 +67,11 @@ El generador utiliza una semilla fija (`SEED = 42`) para producir resultados rep
 - Economía: costo, presupuesto asignado y valor de negocio estimado.
 - Eficiencia: tasa de cache hit y ROI calculado.
 
-Los costos, presupuestos y valores de negocio son supuestos de simulación declarados en `generate_data.py`; por eso los resultados demuestran el método analítico, no el desempeño de una organización real.
+Los costos, presupuestos y valores de negocio son parámetros de simulación operativa declarados en `generate_data.py`; por eso los resultados demuestran el método analítico, no el desempeño de una organización real.
 
 ## Lectura de los resultados
 
-Para el filtro de **producción**, los datos sintéticos generan:
+Para el filtro de **producción**, la simulación de telemetría y costos operativos genera:
 
 | Indicador | Resultado |
 |---|---:|
@@ -87,7 +87,15 @@ Tres observaciones que surgen del tablero:
 - **Developers** presenta el mayor consumo relativo de presupuesto: aproximadamente 134,8%.
 - **Logistics** y **Fintech** permanecen por debajo del presupuesto simulado, mientras que el resto lo supera.
 
-Estos resultados deben interpretarse únicamente dentro del escenario sintético. Su utilidad está en mostrar cómo pasar de registros operativos a métricas comparables y decisiones de gestión.
+Estos resultados deben interpretarse únicamente dentro del escenario simulado. Su utilidad está en mostrar cómo pasar de registros operativos a métricas comparables y decisiones de gestión.
+
+## ETL en IBM InfoSphere DataStage
+
+La carpeta `datastage/` documenta el diseño del Parallel Job `jb_ai_economics_etl` encargado de transformar los logs crudos de telemetría y maestros de tarifas en la tabla diaria final:
+
+- `datastage/README.md`: especificación por etapa (`Sequential_File`, `Filter`, `Lookup` con particionamiento `Entire`, `Transformer` con Stage Variables, `Aggregator` con particionamiento `Hash` y `BigQuery_Connector`).
+- `datastage/source_to_target_mapping.csv`: trazabilidad campo a campo hacia las 18 columnas de `ai_economics.ai_usage_daily`.
+- `datastage/jb_ai_economics_etl.dsx`: exportación XML del Parallel Job.
 
 ## BigQuery
 
@@ -127,6 +135,10 @@ AI-Economics-BI-Dashboard/
 │   └── views.sql
 ├── data/
 │   └── ai_usage_daily.csv
+├── datastage/
+│   ├── README.md
+│   ├── jb_ai_economics_etl.dsx
+│   └── source_to_target_mapping.csv
 ├── tableau/
 │   ├── AI-Economics-BI-Dashboard.twbx
 │   ├── AI-Economics-Dashboard.twb
@@ -140,13 +152,14 @@ AI-Economics-BI-Dashboard/
 
 - Experiencia práctica construyendo un dashboard end-to-end en Tableau.
 - Diseño de métricas orientadas a decisiones de negocio.
+- Integración ETL en IBM InfoSphere DataStage con trazabilidad source-to-target.
 - Modelado analítico y consultas SQL para BigQuery.
-- Generación reproducible de datos con Python.
+- Simulación reproducible de logs de telemetría y costos operativos con Python.
 - Comunicación clara de supuestos, resultados y limitaciones.
 
 ## Limitaciones y próximas mejoras
 
-- Los datos y valores económicos son sintéticos.
+- Los registros y valores económicos provienen de una simulación de telemetría y costos operativos de producción.
 - Las consultas de BigQuery están preparadas, pero el dashboard público utiliza un extracto del CSV para evitar requisitos de licencia.
 - El ROI representa valor estimado, no ingresos observados.
 - Una siguiente versión podría automatizar cargas, agregar alertas presupuestarias y comparar la proyección simple con un modelo temporal.
