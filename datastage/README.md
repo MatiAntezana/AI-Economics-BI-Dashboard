@@ -4,14 +4,6 @@ Parallel Job de IBM InfoSphere DataStage que toma los logs diarios/horarios de t
 
 ![Flujo del Parallel Job jb_ai_economics_etl](jb_ai_economics_etl_flow.jpg)
 
-```text
-seq_telemetry_raw ──► flt_quality_gate ──► lkp_rates_and_budgets ──► xfm_economics_metrics ──► agg_daily_usage ──► bq_ai_usage_daily
-                            │                    ▲            ▲
-                            ▼                    │            │
-                    seq_reject_events   seq_ref_model_rates  seq_ref_team_budgets
-                                           (Entire)             (Entire)
-```
-
 ## Etapas del job
 
 ### a) `Sequential_File` (`PxSequentialFile`)
