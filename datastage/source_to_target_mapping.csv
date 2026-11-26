@@ -1,19 +1,19 @@
 source_field,source_type,datastage_stage,transformation_rule,target_table,target_column,target_type
-event_timestamp,VarChar(26),"Sequential_File -> Filter -> Transformer -> Aggregator","StringToDate(Left(event_timestamp, 10), ""%yyyy-%mm-%dd"") via StageVar svEventDate; clave de agrupación diaria",ai_economics.ai_usage_daily,event_date,DATE
-team,VarChar(64),"Sequential_File -> Filter -> Lookup -> Aggregator","Validado No Nulo/No Vacío en Filter; clave de cruce con seq_ref_team_budgets; agrupado por Hash",ai_economics.ai_usage_daily,team,STRING
-product,VarChar(64),"Sequential_File (ref_team_budgets) -> Lookup -> Aggregator","Enriquecido por Lookup (Entire) desde seq_ref_team_budgets por team; clave de agrupación diaria",ai_economics.ai_usage_daily,product,STRING
-provider,VarChar(64),"Sequential_File (ref_model_rates) -> Lookup -> Aggregator","Enriquecido por Lookup (Entire) desde seq_ref_model_rates por model; clave de agrupación diaria",ai_economics.ai_usage_daily,provider,STRING
-model,VarChar(64),"Sequential_File -> Filter -> Lookup -> Aggregator","Validado No Nulo/No Vacío en Filter; clave de cruce con seq_ref_model_rates; agrupado por Hash",ai_economics.ai_usage_daily,model,STRING
-environment,VarChar(32),"Sequential_File -> Filter -> Transformer -> Aggregator","Validado IN ('production','staging','development') en Filter; define svEnvShare (0.86/0.10/0.04); agrupado por Hash",ai_economics.ai_usage_daily,environment,STRING
-region,VarChar(32),"Sequential_File -> Filter -> Aggregator","Mapeo directo (southamerica-east1); clave de agrupación diaria",ai_economics.ai_usage_daily,region,STRING
-requests,BigInt,"Sequential_File -> Filter -> Aggregator","Validado requests > 0 en Filter; consolidado con Sum(requests) en Aggregator (Hash)",ai_economics.ai_usage_daily,requests,INT64
-input_tokens,BigInt,"Sequential_File -> Filter -> Aggregator","Validado input_tokens >= 0 en Filter; consolidado con Sum(input_tokens) en Aggregator (Hash)",ai_economics.ai_usage_daily,input_tokens,INT64
-output_tokens,BigInt,"Sequential_File -> Filter -> Aggregator","Validado output_tokens >= 0 en Filter (0 para embedding-v3); consolidado con Sum(output_tokens) en Aggregator (Hash)",ai_economics.ai_usage_daily,output_tokens,INT64
-avg_latency_ms,Integer,"Sequential_File -> Filter -> Aggregator","Validado avg_latency_ms >= 0 en Filter; consolidado con Mean(avg_latency_ms) redondeado a entero",ai_economics.ai_usage_daily,avg_latency_ms,INT64
-p95_latency_ms,Integer,"Sequential_File -> Filter -> Aggregator","Validado p95_latency_ms >= avg_latency_ms en Filter; consolidado con Max(p95_latency_ms)",ai_economics.ai_usage_daily,p95_latency_ms,INT64
-error_count / requests,BigInt / BigInt,"Filter -> Transformer -> Aggregator","svRawErrorRate = error_count / requests; svErrorRate acotado a [0.0, 0.20]; Mean(error_rate) en Aggregator",ai_economics.ai_usage_daily,error_rate,FLOAT64
-error_count / requests,BigInt / BigInt,"Transformer -> Aggregator","svSuccessRate = 1.0 - svErrorRate; Mean(success_rate) en Aggregator",ai_economics.ai_usage_daily,success_rate,FLOAT64
-cache_hit_count / requests,BigInt / BigInt,"Filter -> Transformer -> Aggregator","svRawCacheHit = cache_hit_count / requests; svCacheHitRate acotado a [0.0, 0.70]; Mean(cache_hit_rate) en Aggregator",ai_economics.ai_usage_daily,cache_hit_rate,FLOAT64
-"input_tokens, output_tokens, input_rate_usd_per_m, output_rate_usd_per_m, provider, cache_hit_rate","BigInt, Decimal(10,4), VarChar(64), Double","Lookup -> Transformer -> Aggregator","svTokenCost * svInfraMultiplier (1.18 si Self-hosted else 1.0) * (1 - 0.35 * svCacheHitRate); Sum(cost_usd) en Aggregator",ai_economics.ai_usage_daily,cost_usd,NUMERIC
-"daily_budget_usd, traffic_share, environment","Decimal(12,4), Double, VarChar(32)","Lookup -> Transformer -> Aggregator","svAllocatedBudgetUsd = daily_budget_usd * traffic_share * svEnvShare; Max(allocated_budget_usd) en Aggregator",ai_economics.ai_usage_daily,allocated_budget_usd,NUMERIC
-"requests, success_rate, team, value_multiplier","BigInt, Double, VarChar(64), Double","Lookup -> Transformer -> Aggregator","svBusinessValueUsd = requests * svSuccessRate * svValuePerSuccess (0.028 CX else 0.041) * value_multiplier; Sum(business_value_usd) en Aggregator",ai_economics.ai_usage_daily,business_value_usd,NUMERIC
+event_timestamp,VarChar(26),Transformer -> Aggregator,"svEventDate = StringToDate(Left(event_timestamp, 10), ""%yyyy-%mm-%dd"")",ai_economics.ai_usage_daily,event_date,DATE
+team,VarChar(64),Filter -> Lookup -> Aggregator,Clave de lookup con seq_ref_team_budgets y clave Hash,ai_economics.ai_usage_daily,team,STRING
+product,VarChar(64),Lookup -> Aggregator,Traido por Lookup (Entire) desde seq_ref_team_budgets,ai_economics.ai_usage_daily,product,STRING
+provider,VarChar(64),Lookup -> Aggregator,Traido por Lookup (Entire) desde seq_ref_model_rates,ai_economics.ai_usage_daily,provider,STRING
+model,VarChar(64),Filter -> Lookup -> Aggregator,Clave de lookup con seq_ref_model_rates y clave Hash,ai_economics.ai_usage_daily,model,STRING
+environment,VarChar(32),Filter -> Transformer -> Aggregator,"Valida production/staging/development; define svEnvShare",ai_economics.ai_usage_daily,environment,STRING
+region,VarChar(32),Sequential_File -> Aggregator,Mapeo directo (southamerica-east1),ai_economics.ai_usage_daily,region,STRING
+requests,BigInt,Filter -> Aggregator,requests > 0; Sum(requests) por grupo diario,ai_economics.ai_usage_daily,requests,INT64
+input_tokens,BigInt,Filter -> Aggregator,input_tokens >= 0; Sum(input_tokens) por grupo diario,ai_economics.ai_usage_daily,input_tokens,INT64
+output_tokens,BigInt,Filter -> Aggregator,output_tokens >= 0; Sum(output_tokens) por grupo diario,ai_economics.ai_usage_daily,output_tokens,INT64
+avg_latency_ms,Integer,Filter -> Aggregator,avg_latency_ms >= 0; Mean(avg_latency_ms) redondeado a entero,ai_economics.ai_usage_daily,avg_latency_ms,INT64
+p95_latency_ms,Integer,Filter -> Aggregator,p95_latency_ms >= avg_latency_ms; Max(p95_latency_ms),ai_economics.ai_usage_daily,p95_latency_ms,INT64
+error_count / requests,BigInt,Transformer -> Aggregator,"svErrorRate = Clamp(error_count / requests, 0, 0.20); Mean(error_rate)",ai_economics.ai_usage_daily,error_rate,FLOAT64
+error_count / requests,BigInt,Transformer -> Aggregator,"svSuccessRate = 1.0 - svErrorRate; Mean(success_rate)",ai_economics.ai_usage_daily,success_rate,FLOAT64
+cache_hit_count / requests,BigInt,Transformer -> Aggregator,"svCacheHitRate = Clamp(cache_hit_count / requests, 0, 0.70); Mean(cache_hit_rate)",ai_economics.ai_usage_daily,cache_hit_rate,FLOAT64
+"input_tokens, output_tokens, rates, provider, cache_hit_rate","BigInt, Decimal, VarChar, Double",Transformer -> Aggregator,"svCostUsd = token_cost * (1.18 si Self-hosted else 1.0) * (1 - 0.35 * svCacheHitRate); Sum(cost_usd)",ai_economics.ai_usage_daily,cost_usd,NUMERIC
+"daily_budget_usd, traffic_share, environment","Decimal, Double, VarChar",Transformer -> Aggregator,"svAllocatedBudgetUsd = daily_budget_usd * traffic_share * svEnvShare; Max(allocated_budget_usd)",ai_economics.ai_usage_daily,allocated_budget_usd,NUMERIC
+"requests, success_rate, team, value_multiplier","BigInt, Double, VarChar",Transformer -> Aggregator,"svBusinessValueUsd = requests * svSuccessRate * (0.028 CX else 0.041) * value_multiplier; Sum(business_value_usd)",ai_economics.ai_usage_daily,business_value_usd,NUMERIC
