@@ -40,7 +40,7 @@ Tableau Public
 Dashboard de costos, valor y ROI
 ```
 
-El conjunto consolidado contiene **180 días**, **6 equipos**, **5 modelos** y **3 ambientes**. Cada fila representa el uso diario de un modelo por equipo y ambiente.
+El conjunto consolidado contiene **180 días**, **6 equipos**, **5 modelos** y **3 ambientes**. Cada fila representa el uso diario de un modelo por equipo y ambiente. En el repositorio, `generate_data.py` genera directamente el consolidado `data/ai_usage_daily.csv` para que el proyecto sea reproducible sin infraestructura externa, mientras `datastage/` documenta el pipeline ETL productivo equivalente hacia BigQuery.
 
 ## Dashboard
 

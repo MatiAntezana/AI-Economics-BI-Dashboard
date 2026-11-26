@@ -61,6 +61,7 @@
       <Property Name="OutputPins">V0S2P1</Property>
       <Collection Name="Properties" Type="CustomProperty">
         <SubRecord><Property Name="Name">file</Property><Property Name="Value">#pRefModelRatesPath#</Property></SubRecord>
+        <SubRecord><Property Name="Name">firstLineColumnNames</Property><Property Name="Value">firstLineColumnNames</Property></SubRecord>
       </Collection>
     </Record>
     <Record Identifier="V0S2P1" Type="CustomOutput" Readonly="0">
@@ -82,6 +83,7 @@
       <Property Name="OutputPins">V0S3P1</Property>
       <Collection Name="Properties" Type="CustomProperty">
         <SubRecord><Property Name="Name">file</Property><Property Name="Value">#pRefTeamBudgetsPath#</Property></SubRecord>
+        <SubRecord><Property Name="Name">firstLineColumnNames</Property><Property Name="Value">firstLineColumnNames</Property></SubRecord>
       </Collection>
     </Record>
     <Record Identifier="V0S3P1" Type="CustomOutput" Readonly="0">
@@ -139,12 +141,18 @@
       <Collection Name="MetaBag" Type="MetaProperty">
         <SubRecord><Property Name="Owner">APT</Property><Property Name="Name">PartCol</Property><Property Name="Value">entire</Property></SubRecord>
       </Collection>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">model</Property><Property Name="KeyPosition">1</Property><Property Name="LookupKey">lnk_valid_telemetry.model</Property></SubRecord>
+      </Collection>
     </Record>
     <Record Identifier="V0S5P3" Type="CustomInput" Readonly="0">
       <Property Name="Name">lnk_ref_teams</Property>
       <Property Name="Partner">V0S3|V0S3P1</Property>
       <Collection Name="MetaBag" Type="MetaProperty">
         <SubRecord><Property Name="Owner">APT</Property><Property Name="Name">PartCol</Property><Property Name="Value">entire</Property></SubRecord>
+      </Collection>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">team</Property><Property Name="KeyPosition">1</Property><Property Name="LookupKey">lnk_valid_telemetry.team</Property></SubRecord>
       </Collection>
     </Record>
     <Record Identifier="V0S5P4" Type="CustomOutput" Readonly="0">
@@ -175,6 +183,26 @@
     <Record Identifier="V0S6P2" Type="TrxOutput" Readonly="0">
       <Property Name="Name">lnk_calculated_metrics</Property>
       <Property Name="Partner">V0S7|V0S7P1</Property>
+      <Collection Name="Columns" Type="Column">
+        <SubRecord><Property Name="Name">event_date</Property><Property Name="SqlType">9</Property><Property Name="Derivation">svEventDate</Property></SubRecord>
+        <SubRecord><Property Name="Name">team</Property><Property Name="SqlType">12</Property><Property Name="Derivation">lnk_enriched_telemetry.team</Property></SubRecord>
+        <SubRecord><Property Name="Name">product</Property><Property Name="SqlType">12</Property><Property Name="Derivation">lnk_enriched_telemetry.product</Property></SubRecord>
+        <SubRecord><Property Name="Name">provider</Property><Property Name="SqlType">12</Property><Property Name="Derivation">lnk_enriched_telemetry.provider</Property></SubRecord>
+        <SubRecord><Property Name="Name">model</Property><Property Name="SqlType">12</Property><Property Name="Derivation">lnk_enriched_telemetry.model</Property></SubRecord>
+        <SubRecord><Property Name="Name">environment</Property><Property Name="SqlType">12</Property><Property Name="Derivation">lnk_enriched_telemetry.environment</Property></SubRecord>
+        <SubRecord><Property Name="Name">region</Property><Property Name="SqlType">12</Property><Property Name="Derivation">lnk_enriched_telemetry.region</Property></SubRecord>
+        <SubRecord><Property Name="Name">requests</Property><Property Name="SqlType">-5</Property><Property Name="Derivation">lnk_enriched_telemetry.requests</Property></SubRecord>
+        <SubRecord><Property Name="Name">input_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Derivation">lnk_enriched_telemetry.input_tokens</Property></SubRecord>
+        <SubRecord><Property Name="Name">output_tokens</Property><Property Name="SqlType">-5</Property><Property Name="Derivation">lnk_enriched_telemetry.output_tokens</Property></SubRecord>
+        <SubRecord><Property Name="Name">avg_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Derivation">lnk_enriched_telemetry.avg_latency_ms</Property></SubRecord>
+        <SubRecord><Property Name="Name">p95_latency_ms</Property><Property Name="SqlType">-5</Property><Property Name="Derivation">lnk_enriched_telemetry.p95_latency_ms</Property></SubRecord>
+        <SubRecord><Property Name="Name">error_rate</Property><Property Name="SqlType">8</Property><Property Name="Derivation">svErrorRate</Property></SubRecord>
+        <SubRecord><Property Name="Name">success_rate</Property><Property Name="SqlType">8</Property><Property Name="Derivation">svSuccessRate</Property></SubRecord>
+        <SubRecord><Property Name="Name">cache_hit_rate</Property><Property Name="SqlType">8</Property><Property Name="Derivation">svCacheHitRate</Property></SubRecord>
+        <SubRecord><Property Name="Name">cost_usd</Property><Property Name="SqlType">3</Property><Property Name="Derivation">svCostUsd</Property></SubRecord>
+        <SubRecord><Property Name="Name">allocated_budget_usd</Property><Property Name="SqlType">3</Property><Property Name="Derivation">svAllocatedBudgetUsd</Property></SubRecord>
+        <SubRecord><Property Name="Name">business_value_usd</Property><Property Name="SqlType">3</Property><Property Name="Derivation">svBusinessValueUsd</Property></SubRecord>
+      </Collection>
     </Record>
 
     <Record Identifier="V0S7" Type="CustomStage" Readonly="0">
@@ -185,7 +213,7 @@
       <Collection Name="Properties" Type="CustomProperty">
         <SubRecord><Property Name="Name">method</Property><Property Name="Value">hash</Property></SubRecord>
         <SubRecord><Property Name="Name">key</Property><Property Name="Value">event_date|team|product|provider|model|environment|region</Property></SubRecord>
-        <SubRecord><Property Name="Name">aggregations</Property><Property Name="Value">requests=Sum(requests);input_tokens=Sum(input_tokens);output_tokens=Sum(output_tokens);avg_latency_ms=Mean(avg_latency_ms);p95_latency_ms=Max(p95_latency_ms);error_rate=Mean(error_rate);success_rate=Mean(success_rate);cache_hit_rate=Mean(cache_hit_rate);cost_usd=Sum(cost_usd);allocated_budget_usd=Max(allocated_budget_usd);business_value_usd=Sum(business_value_usd)</Property></SubRecord>
+        <SubRecord><Property Name="Name">aggregations</Property><Property Name="Value">requests=Sum(requests);input_tokens=Sum(input_tokens);output_tokens=Sum(output_tokens);avg_latency_ms=Round(Mean(avg_latency_ms));p95_latency_ms=Max(p95_latency_ms);error_rate=Mean(error_rate);success_rate=Mean(success_rate);cache_hit_rate=Mean(cache_hit_rate);cost_usd=Sum(cost_usd);allocated_budget_usd=Max(allocated_budget_usd);business_value_usd=Sum(business_value_usd)</Property></SubRecord>
       </Collection>
     </Record>
     <Record Identifier="V0S7P1" Type="CustomInput" Readonly="0">
@@ -245,6 +273,7 @@
       <Property Name="InputPins">V0S9P1</Property>
       <Collection Name="Properties" Type="CustomProperty">
         <SubRecord><Property Name="Name">file</Property><Property Name="Value">#pRejectFilePath#</Property></SubRecord>
+        <SubRecord><Property Name="Name">firstLineColumnNames</Property><Property Name="Value">firstLineColumnNames</Property></SubRecord>
       </Collection>
     </Record>
     <Record Identifier="V0S9P1" Type="CustomInput" Readonly="0">

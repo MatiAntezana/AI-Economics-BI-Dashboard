@@ -37,11 +37,11 @@ Calcula las métricas derivadas usando *Stage Variables*:
 Consolida al grano diario con particionamiento **`Hash`** por `(event_date, team, model, environment)` hasta llegar a los **16.200 registros** finales:
 - Claves de grupo: `event_date`, `team`, `product`, `provider`, `model`, `environment`, `region`.
 - `Sum`: `requests`, `input_tokens`, `output_tokens`, `cost_usd`, `business_value_usd`.
-- `Mean`: `avg_latency_ms` (entero), `error_rate`, `success_rate`, `cache_hit_rate`.
+- `Mean`: `avg_latency_ms` (redondeado a `INT64`), `error_rate`, `success_rate`, `cache_hit_rate` (en caso de múltiples lotes intra-día con tráfico dispar, `bigquery/views.sql` pondera tasas y latencias por `requests`).
 - `Max`: `p95_latency_ms`, `allocated_budget_usd` (para no multiplicar el presupuesto diario si hay varios lotes en el día).
 
 ### f) `BigQuery_Connector` (`BigQueryConnectorPX`) — `bq_ai_usage_daily`
-Carga la tabla `YOUR_PROJECT_ID.ai_economics.ai_usage_daily` definida en `bigquery/schema.sql` (particionada por `event_date` y clusterizada por `team, model, environment`) y exporta el CSV consolidado a `data/ai_usage_daily.csv`.
+Carga la tabla `YOUR_PROJECT_ID.ai_economics.ai_usage_daily` definida en `bigquery/schema.sql` (particionada por `event_date` y clusterizada por `team, model, environment`). La exportación consolidada a `data/ai_usage_daily.csv` se genera como post-proceso (`bq extract`) sobre la tabla cargada para mantener un único destino en el job.
 
 ## Archivos en esta carpeta
 
