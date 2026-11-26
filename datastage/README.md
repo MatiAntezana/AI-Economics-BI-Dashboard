@@ -2,6 +2,8 @@
 
 Parallel Job de IBM InfoSphere DataStage que toma los logs diarios/horarios de telemetría y los maestros de tarifas y presupuestos para generar las 16.200 filas consolidadas de `ai_economics.ai_usage_daily` (180 días, 6 equipos, 5 modelos, 3 ambientes).
 
+![Flujo del Parallel Job jb_ai_economics_etl](jb_ai_economics_etl_flow.jpg)
+
 ```text
 seq_telemetry_raw ──► flt_quality_gate ──► lkp_rates_and_budgets ──► xfm_economics_metrics ──► agg_daily_usage ──► bq_ai_usage_daily
                             │                    ▲            ▲
@@ -52,5 +54,6 @@ Carga la tabla `YOUR_PROJECT_ID.ai_economics.ai_usage_daily` definida en `bigque
 ## Archivos en esta carpeta
 
 - `README.md`: este diseño del job.
+- `jb_ai_economics_etl_flow.jpg`: diagrama visual del flujo del job.
 - `source_to_target_mapping.csv`: mapeo columna a columna hacia `ai_economics.ai_usage_daily`.
 - `jb_ai_economics_etl.dsx`: exportación XML del job paralelo.

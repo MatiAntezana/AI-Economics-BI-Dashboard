@@ -93,6 +93,10 @@ Estos resultados deben interpretarse únicamente dentro del escenario simulado. 
 
 La carpeta `datastage/` documenta el diseño del Parallel Job `jb_ai_economics_etl` encargado de transformar los logs crudos de telemetría y maestros de tarifas en la tabla diaria final:
 
+<p align="center">
+  <img src="datastage/jb_ai_economics_etl_flow.jpg" alt="Flujo del Parallel Job jb_ai_economics_etl en IBM InfoSphere DataStage" width="100%" />
+</p>
+
 - `datastage/README.md`: especificación por etapa (`Sequential_File`, `Filter`, `Lookup` con particionamiento `Entire`, `Transformer` con Stage Variables, `Aggregator` con particionamiento `Hash` y `BigQuery_Connector`).
 - `datastage/source_to_target_mapping.csv`: trazabilidad campo a campo hacia las 18 columnas de `ai_economics.ai_usage_daily`.
 - `datastage/jb_ai_economics_etl.dsx`: exportación XML del Parallel Job.
@@ -138,6 +142,7 @@ AI-Economics-BI-Dashboard/
 ├── datastage/
 │   ├── README.md
 │   ├── jb_ai_economics_etl.dsx
+│   ├── jb_ai_economics_etl_flow.jpg
 │   └── source_to_target_mapping.csv
 ├── tableau/
 │   ├── AI-Economics-BI-Dashboard.twbx
